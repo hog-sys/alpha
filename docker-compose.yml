@@ -1,0 +1,999 @@
+<<<<<<< HEAD
+# docker-compose.production.yml
+# 生产级Docker Compose配置 - 根据PDF建议实现完整的微服务架构
+
+version: '3.9'
+
+services:
+  # ============================================
+  # 1. 消息队列服务 - RabbitMQ
+  # ============================================
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: crypto-scout-rabbitmq
+    hostname: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"    # AMQP端口
+      - "15672:15672"  # 管理界面
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/
+      - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./config/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-SecurePass123!}
+      RABBITMQ_DEFAULT_VHOST: /
+      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 0.4
+      RABBITMQ_DISK_FREE_LIMIT: 2GB
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping", "-q"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - crypto-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # 2. TimescaleDB 时间序列数据库
+  # ============================================
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: crypto-scout-timescaledb
+    hostname: timescaledb
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+      - ./scripts/create-hypertables.sql:/docker-entrypoint-initdb.d/002-hypertables.sql:ro
+    environment:
+      POSTGRES_USER: ${DB_USER:-crypto_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecureDBPass123!}
+      POSTGRES_DB: ${DB_NAME:-crypto_scout}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      TIMESCALEDB_TELEMETRY: "off"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-crypto_user} -d ${DB_NAME:-crypto_scout}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - crypto-network
+    command: >
+      postgres
+      -c shared_preload_libraries=timescaledb
+      -c max_connections=200
+      -c shared_buffers=1GB
+      -c effective_cache_size=3GB
+      -c maintenance_work_mem=256MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=4MB
+      -c min_wal_size=2GB
+      -c max_wal_size=4GB
+
+  # ============================================
+  # 3. Redis 缓存服务
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: crypto-scout-redis
+    hostname: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./config/redis/redis.conf:/etc/redis/redis.conf:ro
+    command: redis-server /etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - crypto-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # 4. Infisical 密钥管理服务（自托管）
+  # ============================================
+  infisical:
+    image: infisical/infisical:latest
+    container_name: crypto-scout-infisical
+    hostname: infisical
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    volumes:
+      - infisical_data:/app/data
+    environment:
+      ENCRYPTION_KEY: ${INFISICAL_ENCRYPTION_KEY}
+      JWT_SECRET: ${INFISICAL_JWT_SECRET}
+      MONGODB_URL: mongodb://infisical-mongo:27017/infisical
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+    depends_on:
+      - infisical-mongo
+      - redis
+    networks:
+      - crypto-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  infisical-mongo:
+    image: mongo:6
+    container_name: crypto-scout-infisical-mongo
+    hostname: infisical-mongo
+    restart: unless-stopped
+    volumes:
+      - infisical_mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-infisical}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-SecureMongoPass123!}
+    networks:
+      - crypto-network
+
+  # ============================================
+  # 5. Scout服务（微服务架构）
+  # ============================================
+  
+  # 市场Scout
+  market-scout:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scout
+      args:
+        SCOUT_TYPE: market
+    container_name: crypto-scout-market
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SCOUT_TYPE: market
+      SCOUT_WORKERS: 3
+      SCAN_INTERVAL: 30
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # DeFi Scout
+  defi-scout:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scout
+      args:
+        SCOUT_TYPE: defi
+    container_name: crypto-scout-defi
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+    environment:
+      SCOUT_TYPE: defi
+      SCOUT_WORKERS: 2
+      SCAN_INTERVAL: 60
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+
+  # 链上Scout
+  chain-scout:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scout
+      args:
+        SCOUT_TYPE: chain
+    container_name: crypto-scout-chain
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+    environment:
+      SCOUT_TYPE: chain
+      SCOUT_WORKERS: 2
+      SCAN_INTERVAL: 45
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      WEB3_PROVIDER_ETH: ${WEB3_PROVIDER_ETH}
+      WEB3_PROVIDER_BSC: ${WEB3_PROVIDER_BSC}
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+
+  # 社交情绪Scout
+  sentiment-scout:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scout
+      args:
+        SCOUT_TYPE: sentiment
+    container_name: crypto-scout-sentiment
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+    environment:
+      SCOUT_TYPE: sentiment
+      SCOUT_WORKERS: 1
+      SCAN_INTERVAL: 300
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+
+  # ============================================
+  # 6. 分析和处理服务
+  # ============================================
+  
+  # 实时分析器
+  analyzer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.analyzer
+    container_name: crypto-scout-analyzer
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      REDIS_URL: redis://redis:6379
+      ML_MODEL_PATH: /app/ml_models
+      LOG_LEVEL: INFO
+    volumes:
+      - ml_models:/app/ml_models
+    networks:
+      - crypto-network
+
+  # ML预测器
+  ml-predictor:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ml
+    container_name: crypto-scout-ml-predictor
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      MODEL_PATH: /app/ml_models
+      RETRAIN_INTERVAL: 86400
+      LOG_LEVEL: INFO
+    volumes:
+      - ml_models:/app/ml_models
+    networks:
+      - crypto-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+
+  # 数据持久化服务
+  persistence:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.persistence
+    container_name: crypto-scout-persistence
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      BATCH_SIZE: 100
+      FLUSH_INTERVAL: 5
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+
+  # ============================================
+  # 7. 用户界面服务
+  # ============================================
+  
+  # Web仪表盘
+  web-dashboard:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    container_name: crypto-scout-web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      - timescaledb
+      - redis
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: ${WEB_SECRET_KEY}
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`dashboard.crypto-scout.local`)"
+      - "traefik.http.services.dashboard.loadbalancer.server.port=8000"
+
+  # Telegram Bot
+  telegram-bot:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.telegram
+    container_name: crypto-scout-telegram
+    restart: unless-stopped
+    depends_on:
+      - timescaledb
+      - rabbitmq
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+
+  # ============================================
+  # 8. 监控和日志服务
+  # ============================================
+  
+  # Prometheus 监控
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: crypto-scout-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    networks:
+      - crypto-network
+
+  # Grafana 可视化
+  grafana:
+    image: grafana/grafana:latest
+    container_name: crypto-scout-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-SecureGrafanaPass123!}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    depends_on:
+      - prometheus
+    networks:
+      - crypto-network
+
+  # Loki 日志聚合
+  loki:
+    image: grafana/loki:latest
+    container_name: crypto-scout-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./config/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/loki-config.yml
+    networks:
+      - crypto-network
+
+  # ============================================
+  # 9. 负载均衡器（可选）
+  # ============================================
+  traefik:
+    image: traefik:v3.0
+    container_name: crypto-scout-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"  # Traefik仪表盘
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./config/traefik/dynamic:/etc/traefik/dynamic:ro
+      - traefik_certs:/certificates
+    networks:
+      - crypto-network
+
+# ============================================
+# 网络配置
+# ============================================
+networks:
+  crypto-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# ============================================
+# 数据卷配置
+# ============================================
+volumes:
+  rabbitmq_data:
+    driver: local
+  timescaledb_data:
+    driver: local
+  redis_data:
+    driver: local
+  infisical_data:
+    driver: local
+  infisical_mongo_data:
+    driver: local
+  ml_models:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  loki_data:
+    driver: local
+  traefik_certs:
+    driver: local
+=======
+# docker-compose.production.yml
+# 生产级Docker Compose配置 - 根据PDF建议实现完整的微服务架构
+
+version: '3.9'
+
+services:
+  # ============================================
+  # 1. 消息队列服务 - RabbitMQ
+  # ============================================
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: crypto-scout-rabbitmq
+    hostname: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"    # AMQP端口
+      - "15672:15672"  # 管理界面
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/
+      - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./config/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-SecurePass123!}
+      RABBITMQ_DEFAULT_VHOST: /
+      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 0.4
+      RABBITMQ_DISK_FREE_LIMIT: 2GB
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping", "-q"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - crypto-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # 2. TimescaleDB 时间序列数据库
+  # ============================================
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: crypto-scout-timescaledb
+    hostname: timescaledb
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+      - ./scripts/create-hypertables.sql:/docker-entrypoint-initdb.d/002-hypertables.sql:ro
+    environment:
+      POSTGRES_USER: ${DB_USER:-crypto_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecureDBPass123!}
+      POSTGRES_DB: ${DB_NAME:-crypto_scout}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      TIMESCALEDB_TELEMETRY: "off"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-crypto_user} -d ${DB_NAME:-crypto_scout}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - crypto-network
+    command: >
+      postgres
+      -c shared_preload_libraries=timescaledb
+      -c max_connections=200
+      -c shared_buffers=1GB
+      -c effective_cache_size=3GB
+      -c maintenance_work_mem=256MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=4MB
+      -c min_wal_size=2GB
+      -c max_wal_size=4GB
+
+  # ============================================
+  # 3. Redis 缓存服务
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: crypto-scout-redis
+    hostname: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./config/redis/redis.conf:/etc/redis/redis.conf:ro
+    command: redis-server /etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - crypto-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # 4. Infisical 密钥管理服务（自托管）
+  # ============================================
+  infisical:
+    image: infisical/infisical:latest
+    container_name: crypto-scout-infisical
+    hostname: infisical
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    volumes:
+      - infisical_data:/app/data
+    environment:
+      ENCRYPTION_KEY: ${INFISICAL_ENCRYPTION_KEY}
+      JWT_SECRET: ${INFISICAL_JWT_SECRET}
+      MONGODB_URL: mongodb://infisical-mongo:27017/infisical
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+    depends_on:
+      - infisical-mongo
+      - redis
+    networks:
+      - crypto-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  infisical-mongo:
+    image: mongo:6
+    container_name: crypto-scout-infisical-mongo
+    hostname: infisical-mongo
+    restart: unless-stopped
+    volumes:
+      - infisical_mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-infisical}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-SecureMongoPass123!}
+    networks:
+      - crypto-network
+
+  # ============================================
+  # 5. Scout服务（微服务架构）
+  # ============================================
+  
+  # 市场Scout
+  market-scout:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scout
+      args:
+        SCOUT_TYPE: market
+    container_name: crypto-scout-market
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SCOUT_TYPE: market
+      SCOUT_WORKERS: 3
+      SCAN_INTERVAL: 30
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # DeFi Scout
+  defi-scout:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scout
+      args:
+        SCOUT_TYPE: defi
+    container_name: crypto-scout-defi
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+    environment:
+      SCOUT_TYPE: defi
+      SCOUT_WORKERS: 2
+      SCAN_INTERVAL: 60
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+
+  # 链上Scout
+  chain-scout:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scout
+      args:
+        SCOUT_TYPE: chain
+    container_name: crypto-scout-chain
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+    environment:
+      SCOUT_TYPE: chain
+      SCOUT_WORKERS: 2
+      SCAN_INTERVAL: 45
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      WEB3_PROVIDER_ETH: ${WEB3_PROVIDER_ETH}
+      WEB3_PROVIDER_BSC: ${WEB3_PROVIDER_BSC}
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+
+  # 社交情绪Scout
+  sentiment-scout:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scout
+      args:
+        SCOUT_TYPE: sentiment
+    container_name: crypto-scout-sentiment
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+    environment:
+      SCOUT_TYPE: sentiment
+      SCOUT_WORKERS: 1
+      SCAN_INTERVAL: 300
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+
+  # ============================================
+  # 6. 分析和处理服务
+  # ============================================
+  
+  # 实时分析器
+  analyzer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.analyzer
+    container_name: crypto-scout-analyzer
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      REDIS_URL: redis://redis:6379
+      ML_MODEL_PATH: /app/ml_models
+      LOG_LEVEL: INFO
+    volumes:
+      - ml_models:/app/ml_models
+    networks:
+      - crypto-network
+
+  # ML预测器
+  ml-predictor:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ml
+    container_name: crypto-scout-ml-predictor
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      MODEL_PATH: /app/ml_models
+      RETRAIN_INTERVAL: 86400
+      LOG_LEVEL: INFO
+    volumes:
+      - ml_models:/app/ml_models
+    networks:
+      - crypto-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+
+  # 数据持久化服务
+  persistence:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.persistence
+    container_name: crypto-scout-persistence
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      BATCH_SIZE: 100
+      FLUSH_INTERVAL: 5
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+
+  # ============================================
+  # 7. 用户界面服务
+  # ============================================
+  
+  # Web仪表盘
+  web-dashboard:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    container_name: crypto-scout-web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      - timescaledb
+      - redis
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: ${WEB_SECRET_KEY}
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`dashboard.crypto-scout.local`)"
+      - "traefik.http.services.dashboard.loadbalancer.server.port=8000"
+
+  # Telegram Bot
+  telegram-bot:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.telegram
+    container_name: crypto-scout-telegram
+    restart: unless-stopped
+    depends_on:
+      - timescaledb
+      - rabbitmq
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+
+  # ============================================
+  # 8. 监控和日志服务
+  # ============================================
+  
+  # Prometheus 监控
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: crypto-scout-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    networks:
+      - crypto-network
+
+  # Grafana 可视化
+  grafana:
+    image: grafana/grafana:latest
+    container_name: crypto-scout-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-SecureGrafanaPass123!}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    depends_on:
+      - prometheus
+    networks:
+      - crypto-network
+
+  # Loki 日志聚合
+  loki:
+    image: grafana/loki:latest
+    container_name: crypto-scout-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./config/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/loki-config.yml
+    networks:
+      - crypto-network
+
+  # ============================================
+  # 9. 负载均衡器（可选）
+  # ============================================
+  traefik:
+    image: traefik:v3.0
+    container_name: crypto-scout-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"  # Traefik仪表盘
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./config/traefik/dynamic:/etc/traefik/dynamic:ro
+      - traefik_certs:/certificates
+    networks:
+      - crypto-network
+
+# ============================================
+# 网络配置
+# ============================================
+networks:
+  crypto-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# ============================================
+# 数据卷配置
+# ============================================
+volumes:
+  rabbitmq_data:
+    driver: local
+  timescaledb_data:
+    driver: local
+  redis_data:
+    driver: local
+  infisical_data:
+    driver: local
+  infisical_mongo_data:
+    driver: local
+  ml_models:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  loki_data:
+    driver: local
+  traefik_certs:
+    driver: local
+>>>>>>> e5cf058720e42a15be9be28747f9f02b5d15a885

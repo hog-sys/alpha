@@ -1,0 +1,431 @@
+2025-08-05 16:05:37,520 - Main - INFO - ============================================================
+2025-08-05 16:05:37,521 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 16:05:37,521 - Main - INFO - ============================================================
+2025-08-05 16:05:37,521 - src.core.performance_optimizer - INFO - 正在为Windows平台优化性能...
+2025-08-05 16:05:37,575 - src.core.performance_optimizer - INFO - ✅ Windows性能优化完成 - 进程优先级: 高, CPU核心: 12
+2025-08-05 16:07:29,889 - Main - INFO - ============================================================
+2025-08-05 16:07:29,895 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 16:07:29,896 - Main - INFO - ============================================================
+2025-08-05 16:07:29,896 - src.core.performance_optimizer - INFO - 正在为Windows平台优化性能...
+2025-08-05 16:07:29,900 - src.core.performance_optimizer - INFO - ✅ Windows性能优化完成 - 进程优先级: 高, CPU核心: 12
+2025-08-05 16:07:30,070 - src.core.database - CRITICAL - 创建表时发生未知错误: connection was closed in the middle of operation
+2025-08-05 16:09:52,046 - Main - INFO - ============================================================
+2025-08-05 16:09:52,046 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 16:09:52,046 - Main - INFO - ============================================================
+2025-08-05 16:09:52,046 - src.core.performance_optimizer - INFO - 正在为Windows平台优化性能...
+2025-08-05 16:09:52,049 - src.core.performance_optimizer - INFO - ✅ Windows性能优化完成 - 进程优先级: 高, CPU核心: 12
+2025-08-05 16:09:52,115 - src.core.database - WARNING - 数据库连接失败 (尝试 1/5)，可能正在启动中。将在 5 秒后重试...
+2025-08-05 16:09:57,181 - src.core.database - WARNING - 数据库连接失败 (尝试 2/5)，可能正在启动中。将在 5 秒后重试...
+2025-08-05 16:10:02,252 - src.core.database - WARNING - 数据库连接失败 (尝试 3/5)，可能正在启动中。将在 5 秒后重试...
+2025-08-05 16:10:07,414 - src.core.database - WARNING - 数据库连接失败 (尝试 4/5)，可能正在启动中。将在 5 秒后重试...
+2025-08-05 16:10:12,478 - src.core.database - CRITICAL - 在 5 次尝试后，仍无法连接到数据库。错误: connection was closed in the middle of operation
+2025-08-05 16:14:15,521 - Main - INFO - ============================================================
+2025-08-05 16:14:15,521 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 16:14:15,522 - Main - INFO - ============================================================
+2025-08-05 16:14:15,522 - src.core.performance_optimizer - INFO - 正在为Windows平台优化性能...
+2025-08-05 16:14:15,531 - src.core.performance_optimizer - INFO - ✅ Windows性能优化完成 - 进程优先级: 高, CPU核心: 12
+2025-08-05 16:14:15,631 - src.core.database - WARNING - 数据库连接失败 (尝试 1/10)，可能正在启动中。将在 5 秒后重试...
+2025-08-05 16:14:20,699 - src.core.database - WARNING - 数据库连接失败 (尝试 2/10)，可能正在启动中。将在 5 秒后重试...
+2025-08-05 16:14:25,768 - src.core.database - WARNING - 数据库连接失败 (尝试 3/10)，可能正在启动中。将在 5 秒后重试...
+2025-08-05 16:14:30,837 - src.core.database - WARNING - 数据库连接失败 (尝试 4/10)，可能正在启动中。将在 5 秒后重试...
+2025-08-05 16:14:35,906 - src.core.database - WARNING - 数据库连接失败 (尝试 5/10)，可能正在启动中。将在 5 秒后重试...
+2025-08-05 16:14:41,092 - src.core.database - WARNING - 数据库连接失败 (尝试 6/10)，可能正在启动中。将在 5 秒后重试...
+2025-08-05 16:14:46,154 - src.core.database - WARNING - 数据库连接失败 (尝试 7/10)，可能正在启动中。将在 5 秒后重试...
+2025-08-05 16:14:51,212 - src.core.database - WARNING - 数据库连接失败 (尝试 8/10)，可能正在启动中。将在 5 秒后重试...
+2025-08-05 16:14:56,273 - src.core.database - WARNING - 数据库连接失败 (尝试 9/10)，可能正在启动中。将在 5 秒后重试...
+2025-08-05 16:15:01,336 - src.core.database - CRITICAL - 在 10 次尝试后，仍无法连接到数据库。错误: connection was closed in the middle of operation
+2025-08-05 16:23:52,176 - Main - INFO - ============================================================
+2025-08-05 16:23:52,177 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 16:23:52,177 - Main - INFO - ============================================================
+2025-08-05 16:23:52,177 - src.core.performance_optimizer - INFO - 正在为Windows平台优化性能...
+2025-08-05 16:23:52,180 - src.core.performance_optimizer - INFO - ✅ Windows性能优化完成 - 进程优先级: 高, CPU核心: 12
+2025-08-05 16:23:52,224 - src.core.database - WARNING - 数据库连接失败 (尝试 1/12)，可能正在启动中。将在 10 秒后重试...
+2025-08-05 16:24:02,274 - src.core.database - WARNING - 数据库连接失败 (尝试 2/12)，可能正在启动中。将在 10 秒后重试...
+2025-08-05 16:24:12,315 - src.core.database - WARNING - 数据库连接失败 (尝试 3/12)，可能正在启动中。将在 10 秒后重试...
+2025-08-05 16:24:22,481 - src.core.database - WARNING - 数据库连接失败 (尝试 4/12)，可能正在启动中。将在 10 秒后重试...
+2025-08-05 16:24:32,528 - src.core.database - WARNING - 数据库连接失败 (尝试 5/12)，可能正在启动中。将在 10 秒后重试...
+2025-08-05 16:24:42,696 - src.core.database - WARNING - 数据库连接失败 (尝试 6/12)，可能正在启动中。将在 10 秒后重试...
+2025-08-05 16:24:52,743 - src.core.database - WARNING - 数据库连接失败 (尝试 7/12)，可能正在启动中。将在 10 秒后重试...
+2025-08-05 16:25:02,793 - src.core.database - WARNING - 数据库连接失败 (尝试 8/12)，可能正在启动中。将在 10 秒后重试...
+2025-08-05 16:25:12,836 - src.core.database - WARNING - 数据库连接失败 (尝试 9/12)，可能正在启动中。将在 10 秒后重试...
+2025-08-05 16:25:22,883 - src.core.database - WARNING - 数据库连接失败 (尝试 10/12)，可能正在启动中。将在 10 秒后重试...
+2025-08-05 16:25:32,931 - src.core.database - WARNING - 数据库连接失败 (尝试 11/12)，可能正在启动中。将在 10 秒后重试...
+2025-08-05 16:25:42,979 - src.core.database - CRITICAL - 在 12 次尝试后，仍无法连接到数据库。错误: connection was closed in the middle of operation
+2025-08-05 14:37:53,883 - Main - INFO - ============================================================
+2025-08-05 14:37:53,883 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:37:53,883 - Main - INFO - ============================================================
+2025-08-05 14:37:53,884 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:37:53,884 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:37:53,885 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:37:53,895 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:37:55,547 - Main - INFO - ============================================================
+2025-08-05 14:37:55,547 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:37:55,547 - Main - INFO - ============================================================
+2025-08-05 14:37:55,548 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:37:55,548 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:37:55,549 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:37:55,557 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:37:57,260 - Main - INFO - ============================================================
+2025-08-05 14:37:57,260 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:37:57,260 - Main - INFO - ============================================================
+2025-08-05 14:37:57,261 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:37:57,261 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:37:57,262 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:37:57,268 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:37:59,250 - Main - INFO - ============================================================
+2025-08-05 14:37:59,251 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:37:59,251 - Main - INFO - ============================================================
+2025-08-05 14:37:59,252 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:37:59,253 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:37:59,253 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:37:59,261 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:38:01,663 - Main - INFO - ============================================================
+2025-08-05 14:38:01,664 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:38:01,664 - Main - INFO - ============================================================
+2025-08-05 14:38:01,664 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:38:01,665 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:38:01,666 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:38:01,675 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:38:04,805 - Main - INFO - ============================================================
+2025-08-05 14:38:04,805 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:38:04,805 - Main - INFO - ============================================================
+2025-08-05 14:38:04,806 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:38:04,806 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:38:04,807 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:38:04,813 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:38:09,429 - Main - INFO - ============================================================
+2025-08-05 14:38:09,429 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:38:09,430 - Main - INFO - ============================================================
+2025-08-05 14:38:09,430 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:38:09,431 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:38:09,431 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:38:09,440 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:38:17,337 - Main - INFO - ============================================================
+2025-08-05 14:38:17,337 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:38:17,337 - Main - INFO - ============================================================
+2025-08-05 14:38:17,338 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:38:17,338 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:38:17,338 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:38:17,345 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:38:31,534 - Main - INFO - ============================================================
+2025-08-05 14:38:31,534 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:38:31,535 - Main - INFO - ============================================================
+2025-08-05 14:38:31,535 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:38:31,535 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:38:31,536 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:38:31,542 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:38:58,537 - Main - INFO - ============================================================
+2025-08-05 14:38:58,537 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:38:58,537 - Main - INFO - ============================================================
+2025-08-05 14:38:58,538 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:38:58,538 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:38:58,539 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:38:58,545 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:46:54,299 - Main - INFO - ============================================================
+2025-08-05 14:46:54,300 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:46:54,300 - Main - INFO - ============================================================
+2025-08-05 14:46:54,300 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:46:54,301 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:46:54,301 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:46:54,315 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:46:55,919 - Main - INFO - ============================================================
+2025-08-05 14:46:55,919 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:46:55,919 - Main - INFO - ============================================================
+2025-08-05 14:46:55,920 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:46:55,920 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:46:55,921 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:46:55,928 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:46:57,580 - Main - INFO - ============================================================
+2025-08-05 14:46:57,580 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:46:57,580 - Main - INFO - ============================================================
+2025-08-05 14:46:57,581 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:46:57,581 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:46:57,582 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:46:57,589 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:46:59,453 - Main - INFO - ============================================================
+2025-08-05 14:46:59,453 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:46:59,454 - Main - INFO - ============================================================
+2025-08-05 14:46:59,454 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:46:59,455 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:46:59,455 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:46:59,462 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:47:01,690 - Main - INFO - ============================================================
+2025-08-05 14:47:01,690 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:47:01,690 - Main - INFO - ============================================================
+2025-08-05 14:47:01,691 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:47:01,691 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:47:01,691 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:47:01,697 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:49:50,605 - Main - INFO - ============================================================
+2025-08-05 14:49:50,605 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:49:50,605 - Main - INFO - ============================================================
+2025-08-05 14:49:50,606 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:49:50,606 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:49:50,607 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:49:50,619 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:49:52,151 - Main - INFO - ============================================================
+2025-08-05 14:49:52,151 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:49:52,151 - Main - INFO - ============================================================
+2025-08-05 14:49:52,152 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:49:52,152 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:49:52,153 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:49:52,159 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:49:53,783 - Main - INFO - ============================================================
+2025-08-05 14:49:53,783 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:49:53,783 - Main - INFO - ============================================================
+2025-08-05 14:49:53,784 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:49:53,784 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:49:53,785 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:49:53,792 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:49:55,608 - Main - INFO - ============================================================
+2025-08-05 14:49:55,608 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:49:55,609 - Main - INFO - ============================================================
+2025-08-05 14:49:55,609 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:49:55,610 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:49:55,610 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:49:55,618 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:49:57,852 - Main - INFO - ============================================================
+2025-08-05 14:49:57,853 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:49:57,853 - Main - INFO - ============================================================
+2025-08-05 14:49:57,853 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:49:57,854 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:49:57,854 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:49:57,862 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:50:00,899 - Main - INFO - ============================================================
+2025-08-05 14:50:00,900 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:50:00,900 - Main - INFO - ============================================================
+2025-08-05 14:50:00,900 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:50:00,901 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:50:00,901 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:50:00,908 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:50:05,509 - Main - INFO - ============================================================
+2025-08-05 14:50:05,509 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:50:05,510 - Main - INFO - ============================================================
+2025-08-05 14:50:05,510 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:50:05,511 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:50:05,511 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:50:05,518 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:59:44,748 - Main - INFO - ============================================================
+2025-08-05 14:59:44,749 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:59:44,750 - Main - INFO - ============================================================
+2025-08-05 14:59:44,750 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:59:44,751 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:59:44,751 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:59:44,762 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:59:46,214 - Main - INFO - ============================================================
+2025-08-05 14:59:46,214 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:59:46,214 - Main - INFO - ============================================================
+2025-08-05 14:59:46,214 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:59:46,215 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:59:46,215 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:59:46,223 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:59:47,720 - Main - INFO - ============================================================
+2025-08-05 14:59:47,721 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:59:47,721 - Main - INFO - ============================================================
+2025-08-05 14:59:47,721 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:59:47,722 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:59:47,722 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:59:47,730 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-05 14:59:49,413 - Main - INFO - ============================================================
+2025-08-05 14:59:49,413 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-05 14:59:49,413 - Main - INFO - ============================================================
+2025-08-05 14:59:49,414 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-05 14:59:49,414 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-05 14:59:49,414 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-05 14:59:49,420 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-06 14:39:55,406 - Main - INFO - ============================================================
+2025-08-06 14:39:55,406 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:39:55,407 - Main - INFO - ============================================================
+2025-08-06 14:39:55,407 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:39:55,408 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:39:55,408 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:39:55,431 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-06 14:39:57,606 - Main - INFO - ============================================================
+2025-08-06 14:39:57,606 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:39:57,606 - Main - INFO - ============================================================
+2025-08-06 14:39:57,607 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:39:57,608 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:39:57,608 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:39:57,618 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-06 14:39:59,405 - Main - INFO - ============================================================
+2025-08-06 14:39:59,406 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:39:59,406 - Main - INFO - ============================================================
+2025-08-06 14:39:59,406 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:39:59,407 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:39:59,407 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:39:59,416 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-06 14:40:01,666 - Main - INFO - ============================================================
+2025-08-06 14:40:01,667 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:40:01,667 - Main - INFO - ============================================================
+2025-08-06 14:40:01,667 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:40:01,668 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:40:01,668 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:40:01,678 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-06 14:40:04,775 - Main - INFO - ============================================================
+2025-08-06 14:40:04,776 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:40:04,776 - Main - INFO - ============================================================
+2025-08-06 14:40:04,776 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:40:04,777 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:40:04,777 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:40:04,791 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-06 14:40:08,808 - Main - INFO - ============================================================
+2025-08-06 14:40:08,809 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:40:08,809 - Main - INFO - ============================================================
+2025-08-06 14:40:08,809 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:40:08,810 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:40:08,810 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:40:08,821 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-06 14:40:22,279 - Main - INFO - ============================================================
+2025-08-06 14:40:22,279 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:40:22,280 - Main - INFO - ============================================================
+2025-08-06 14:40:22,280 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:40:22,281 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:40:22,281 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:40:22,397 - src.core.database - CRITICAL - 创建表时发生未知错误: Multiple exceptions: [Errno 111] Connect call failed ('::1', 5432, 0, 0), [Errno 111] Connect call failed ('127.0.0.1', 5432)
+2025-08-06 14:46:06,800 - Main - INFO - ============================================================
+2025-08-06 14:46:06,801 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:46:06,801 - Main - INFO - ============================================================
+2025-08-06 14:46:06,801 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:46:06,802 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:46:06,802 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:46:06,863 - src.core.database - INFO - 数据库连接测试成功，开始设置表...
+2025-08-06 14:46:06,906 - src.core.database - INFO - ✅ 数据库表创建完成（如果不存在的话）。
+2025-08-06 14:46:06,928 - src.core.database - CRITICAL - 创建表时发生未知错误: (sqlalchemy.dialects.postgresql.asyncpg.Error) <class 'asyncpg.exceptions._base.UnknownPostgresError'>: cannot create a unique index without the column "timestamp" (used in partitioning)
+HINT:  If you're creating a hypertable on a table with a primary key, ensure the partitioning column is part of the primary or composite key.
+[SQL: SELECT create_hypertable('opportunities', 'timestamp');]
+(Background on this error at: https://sqlalche.me/e/20/dbapi)
+2025-08-06 14:46:08,601 - Main - INFO - ============================================================
+2025-08-06 14:46:08,601 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:46:08,601 - Main - INFO - ============================================================
+2025-08-06 14:46:08,602 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:46:08,602 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:46:08,603 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:46:08,659 - src.core.database - INFO - 数据库连接测试成功，开始设置表...
+2025-08-06 14:46:08,696 - src.core.database - INFO - ✅ 数据库表创建完成（如果不存在的话）。
+2025-08-06 14:46:08,714 - src.core.database - CRITICAL - 创建表时发生未知错误: (sqlalchemy.dialects.postgresql.asyncpg.Error) <class 'asyncpg.exceptions._base.UnknownPostgresError'>: cannot create a unique index without the column "timestamp" (used in partitioning)
+HINT:  If you're creating a hypertable on a table with a primary key, ensure the partitioning column is part of the primary or composite key.
+[SQL: SELECT create_hypertable('opportunities', 'timestamp');]
+(Background on this error at: https://sqlalche.me/e/20/dbapi)
+2025-08-06 14:46:10,519 - Main - INFO - ============================================================
+2025-08-06 14:46:10,519 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:46:10,519 - Main - INFO - ============================================================
+2025-08-06 14:46:10,520 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:46:10,520 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:46:10,520 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:46:10,565 - src.core.database - INFO - 数据库连接测试成功，开始设置表...
+2025-08-06 14:46:10,603 - src.core.database - INFO - ✅ 数据库表创建完成（如果不存在的话）。
+2025-08-06 14:46:10,621 - src.core.database - CRITICAL - 创建表时发生未知错误: (sqlalchemy.dialects.postgresql.asyncpg.Error) <class 'asyncpg.exceptions._base.UnknownPostgresError'>: cannot create a unique index without the column "timestamp" (used in partitioning)
+HINT:  If you're creating a hypertable on a table with a primary key, ensure the partitioning column is part of the primary or composite key.
+[SQL: SELECT create_hypertable('opportunities', 'timestamp');]
+(Background on this error at: https://sqlalche.me/e/20/dbapi)
+2025-08-06 14:46:12,591 - Main - INFO - ============================================================
+2025-08-06 14:46:12,592 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:46:12,592 - Main - INFO - ============================================================
+2025-08-06 14:46:12,592 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:46:12,593 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:46:12,593 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:46:12,641 - src.core.database - INFO - 数据库连接测试成功，开始设置表...
+2025-08-06 14:46:12,681 - src.core.database - INFO - ✅ 数据库表创建完成（如果不存在的话）。
+2025-08-06 14:46:12,700 - src.core.database - CRITICAL - 创建表时发生未知错误: (sqlalchemy.dialects.postgresql.asyncpg.Error) <class 'asyncpg.exceptions._base.UnknownPostgresError'>: cannot create a unique index without the column "timestamp" (used in partitioning)
+HINT:  If you're creating a hypertable on a table with a primary key, ensure the partitioning column is part of the primary or composite key.
+[SQL: SELECT create_hypertable('opportunities', 'timestamp');]
+(Background on this error at: https://sqlalche.me/e/20/dbapi)
+2025-08-06 14:46:15,241 - Main - INFO - ============================================================
+2025-08-06 14:46:15,241 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:46:15,241 - Main - INFO - ============================================================
+2025-08-06 14:46:15,242 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:46:15,242 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:46:15,243 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:46:15,300 - src.core.database - INFO - 数据库连接测试成功，开始设置表...
+2025-08-06 14:46:15,340 - src.core.database - INFO - ✅ 数据库表创建完成（如果不存在的话）。
+2025-08-06 14:46:15,358 - src.core.database - CRITICAL - 创建表时发生未知错误: (sqlalchemy.dialects.postgresql.asyncpg.Error) <class 'asyncpg.exceptions._base.UnknownPostgresError'>: cannot create a unique index without the column "timestamp" (used in partitioning)
+HINT:  If you're creating a hypertable on a table with a primary key, ensure the partitioning column is part of the primary or composite key.
+[SQL: SELECT create_hypertable('opportunities', 'timestamp');]
+(Background on this error at: https://sqlalche.me/e/20/dbapi)
+2025-08-06 14:49:38,960 - Main - INFO - ============================================================
+2025-08-06 14:49:38,960 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:49:38,961 - Main - INFO - ============================================================
+2025-08-06 14:49:38,961 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:49:38,962 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:49:38,962 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:49:39,015 - src.core.database - INFO - 数据库连接测试成功，开始设置表...
+2025-08-06 14:49:39,051 - src.core.database - INFO - ✅ 数据库表创建完成（如果不存在的话）。
+2025-08-06 14:49:39,068 - src.core.database - INFO - ✅ 'opportunities' 表已成功转换为TimescaleDB超表。
+2025-08-06 14:49:39,072 - src.core.database - INFO - ✅ 数据库连接成功并完成表设置。
+2025-08-06 14:49:39,073 - src.core.scout_manager - INFO - 初始化Scout管理器...
+2025-08-06 14:49:39,223 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 base_scout: No module named 'src.scouts.core'
+2025-08-06 14:49:39,692 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 contract_scout: No module named 'src.scouts.core'
+2025-08-06 14:49:39,723 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 defi_scout: No module named 'src.scouts.core'
+2025-08-06 14:49:39,735 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 market_scout: invalid non-printable character U+00A0 (market_scout.py, line 509)
+2025-08-06 14:49:41,413 - Main - INFO - ============================================================
+2025-08-06 14:49:41,413 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:49:41,414 - Main - INFO - ============================================================
+2025-08-06 14:49:41,414 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:49:41,415 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:49:41,415 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:49:41,470 - src.core.database - INFO - 数据库连接测试成功，开始设置表...
+2025-08-06 14:49:41,504 - src.core.database - INFO - ✅ 数据库表创建完成（如果不存在的话）。
+2025-08-06 14:49:41,521 - src.core.database - INFO - ✅ 'opportunities' 表已成功转换为TimescaleDB超表。
+2025-08-06 14:49:41,525 - src.core.database - INFO - ✅ 数据库连接成功并完成表设置。
+2025-08-06 14:49:41,525 - src.core.scout_manager - INFO - 初始化Scout管理器...
+2025-08-06 14:49:41,656 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 base_scout: No module named 'src.scouts.core'
+2025-08-06 14:49:42,094 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 contract_scout: No module named 'src.scouts.core'
+2025-08-06 14:49:42,112 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 defi_scout: No module named 'src.scouts.core'
+2025-08-06 14:49:42,125 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 market_scout: invalid non-printable character U+00A0 (market_scout.py, line 509)
+2025-08-06 14:49:43,879 - Main - INFO - ============================================================
+2025-08-06 14:49:43,879 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 14:49:43,880 - Main - INFO - ============================================================
+2025-08-06 14:49:43,880 - src.core.performance_optimizer - INFO - 正在为Linux平台优化性能...
+2025-08-06 14:49:43,881 - src.core.performance_optimizer - WARNING - 设置进程nice值失败: (pid=1)
+2025-08-06 14:49:43,881 - src.core.performance_optimizer - INFO - ✅ Linux性能优化完成。
+2025-08-06 14:49:43,929 - src.core.database - INFO - 数据库连接测试成功，开始设置表...
+2025-08-06 14:49:43,964 - src.core.database - INFO - ✅ 数据库表创建完成（如果不存在的话）。
+2025-08-06 14:49:43,982 - src.core.database - INFO - ✅ 'opportunities' 表已成功转换为TimescaleDB超表。
+2025-08-06 14:49:43,987 - src.core.database - INFO - ✅ 数据库连接成功并完成表设置。
+2025-08-06 14:49:43,987 - src.core.scout_manager - INFO - 初始化Scout管理器...
+2025-08-06 14:49:44,129 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 base_scout: No module named 'src.scouts.core'
+2025-08-06 14:49:44,589 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 contract_scout: No module named 'src.scouts.core'
+2025-08-06 14:49:44,606 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 defi_scout: No module named 'src.scouts.core'
+2025-08-06 14:49:44,620 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 market_scout: invalid non-printable character U+00A0 (market_scout.py, line 509)
+2025-08-06 15:02:17,176 - Main - INFO - ============================================================
+2025-08-06 15:02:17,176 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 15:02:17,177 - Main - INFO - ============================================================
+2025-08-06 15:02:17,242 - src.core.database - INFO - 数据库连接测试成功，开始设置表...
+2025-08-06 15:02:17,298 - src.core.database - INFO - ✅ 数据库表创建完成（如果不存在的话）。
+2025-08-06 15:02:17,327 - src.core.database - INFO - ✅ 'opportunities' 表已成功转换为TimescaleDB超表。
+2025-08-06 15:02:17,330 - src.core.database - INFO - ✅ 数据库连接成功并完成表设置。
+2025-08-06 15:02:17,331 - src.core.scout_manager - INFO - 初始化Scout管理器...
+2025-08-06 15:02:18,065 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 contract_scout: cannot import name 'OpportunitySignal' from 'src.core.scout_manager' (/app/src/core/scout_manager.py)
+2025-08-06 15:02:18,103 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 defi_scout: cannot import name 'OpportunitySignal' from 'src.core.scout_manager' (/app/src/core/scout_manager.py)
+2025-08-06 15:02:18,116 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 market_scout: invalid non-printable character U+00A0 (market_scout.py, line 509)
+2025-08-06 15:02:18,118 - Main - INFO - ✅ 4个核心服务正在启动...
+2025-08-06 15:02:18,118 - src.services.persistence_service - INFO - 🚀 持久化服务启动中...
+2025-08-06 15:02:18,190 - src.telegram.bot - INFO - 初始化Telegram机器人...
+2025-08-06 15:02:19,918 - Main - INFO - ============================================================
+2025-08-06 15:02:19,918 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 15:02:19,918 - Main - INFO - ============================================================
+2025-08-06 15:02:19,964 - src.core.database - INFO - 数据库连接测试成功，开始设置表...
+2025-08-06 15:02:19,998 - src.core.database - INFO - ✅ 数据库表创建完成（如果不存在的话）。
+2025-08-06 15:02:20,014 - src.core.database - INFO - ✅ 'opportunities' 表已成功转换为TimescaleDB超表。
+2025-08-06 15:02:20,021 - src.core.database - INFO - ✅ 数据库连接成功并完成表设置。
+2025-08-06 15:02:20,021 - src.core.scout_manager - INFO - 初始化Scout管理器...
+2025-08-06 15:02:20,567 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 contract_scout: cannot import name 'OpportunitySignal' from 'src.core.scout_manager' (/app/src/core/scout_manager.py)
+2025-08-06 15:02:20,576 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 defi_scout: cannot import name 'OpportunitySignal' from 'src.core.scout_manager' (/app/src/core/scout_manager.py)
+2025-08-06 15:02:20,589 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 market_scout: invalid non-printable character U+00A0 (market_scout.py, line 509)
+2025-08-06 15:02:20,591 - Main - INFO - ✅ 4个核心服务正在启动...
+2025-08-06 15:02:20,592 - src.services.persistence_service - INFO - 🚀 持久化服务启动中...
+2025-08-06 15:02:20,648 - src.telegram.bot - INFO - 初始化Telegram机器人...
+2025-08-06 15:02:22,567 - Main - INFO - ============================================================
+2025-08-06 15:02:22,568 - Main - INFO -    Crypto Alpha Scout - 架构重构版
+2025-08-06 15:02:22,568 - Main - INFO - ============================================================
+2025-08-06 15:02:22,621 - src.core.database - INFO - 数据库连接测试成功，开始设置表...
+2025-08-06 15:02:22,655 - src.core.database - INFO - ✅ 数据库表创建完成（如果不存在的话）。
+2025-08-06 15:02:22,670 - src.core.database - INFO - ✅ 'opportunities' 表已成功转换为TimescaleDB超表。
+2025-08-06 15:02:22,675 - src.core.database - INFO - ✅ 数据库连接成功并完成表设置。
+2025-08-06 15:02:22,676 - src.core.scout_manager - INFO - 初始化Scout管理器...
+2025-08-06 15:02:23,247 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 contract_scout: cannot import name 'OpportunitySignal' from 'src.core.scout_manager' (/app/src/core/scout_manager.py)
+2025-08-06 15:02:23,256 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 defi_scout: cannot import name 'OpportunitySignal' from 'src.core.scout_manager' (/app/src/core/scout_manager.py)
+2025-08-06 15:02:23,268 - src.core.scout_manager - ERROR - ❌ 加载Scout模块失败 market_scout: invalid non-printable character U+00A0 (market_scout.py, line 509)
+2025-08-06 15:02:23,272 - Main - INFO - ✅ 4个核心服务正在启动...
+2025-08-06 15:02:23,273 - src.services.persistence_service - INFO - 🚀 持久化服务启动中...
+2025-08-06 15:02:23,308 - src.telegram.bot - INFO - 初始化Telegram机器人...

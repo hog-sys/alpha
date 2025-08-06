@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Alpha Scout - 智能交易控制台</title>
+    
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        
+        .neon-glow {
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        }
+        
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(0, 255, 136, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0);
+            }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        .shap-bar {
+            transition: all 0.3s ease;
+        }
+        
+        .shap-bar:hover {
+            transform: translateX(5px);
+        }
+        
+        .notification-enter-active {
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="min-h-screen p-6">
+        <!-- Header -->
+        <header class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold gradient-text">Crypto Alpha Scout</h1>
+                    <p class="text-gray-400 mt-2">智能机会发现引擎 v2.0</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-green-500 rounded-full pulse-dot mr-2"></div>
+                        <span class="text-white">系统在线</span>
+                    </div>
+                    <button @click="toggleDarkMode" class="glass-card px-4 py-2 rounded-lg text-white hover:bg-white/10 transition">
+                        {{ darkMode ? '🌙' : ☀️' }}
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主要指标卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div v-for="metric in mainMetrics" :key="metric.name" class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-gray-400 text-sm">{{ metric.label }}</span>
+                    <span :class="metric.trend > 0 ? 'text-green-400' : 'text-red-400'" class="text-sm">
+                        {{ metric.trend > 0 ? '↑' : '↓' }} {{ Math.abs(metric.trend) }}%
+                    </span>
+                </div>
+                <div class="text-3xl font-bold text-white">{{ metric.value }}</div>
+                <div class="mt-4 h-1 bg-gray-700 rounded-full overflow-hidden">
+                    <div :style="{width: metric.progress + '%'}" 
+                         class="h-full bg-gradient-to-r from-green-400 to-blue-400 transition-all duration-500"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要内容区 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 左侧：实时机会列表 -->
+            <div class="lg:col-span-1">
+                <div class="glass-card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold text-white mb-4">🎯 实时机会</h2>
+                    <div class="space-y-3 max-h-96 overflow-y-auto">
+                        <div v-for="opp in opportunities" :key="opp.id" 
+                             @click="selectOpportunity(opp)"
+                             class="p-4 rounded-lg bg-white/5 hover:bg-white/10 cursor-pointer transition-all"
+                             :class="{'neon-glow': opp.confidence > 0.8}">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-semibold text-white">{{ opp.symbol }}</span>
+                                <span class="text-xs px-2 py-1 rounded-full"
+                                      :class="getSignalTypeClass(opp.signal_type)">
+                                    {{ opp.signal_type }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-400">
+                                    置信度: <span class="text-white">{{ (opp.confidence * 100).toFixed(1) }}%</span>
+                                </div>
+                                <div class="text-sm" :class="opp.profit_pct > 0 ? 'text-green-400' : 'text-red-400'">
+                                    {{ opp.profit_pct > 0 ? '+' : '' }}{{ opp.profit_pct.toFixed(2) }}%
+                                </div>
+                            </div>
+                            <div class="mt-2 text-xs text-gray-500">
+                                {{ formatTime(opp.timestamp) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scout状态 -->
+                <div class="glass-card rounded-xl p-6 mt-6">
+                    <h2 class="text-xl font-semibold text-white mb-4">🤖 Scout状态</h2>
+                    <div class="space-y-3">
+                        <div v-for="scout in scoutStatus" :key="scout.name" class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div :class="scout.active ? 'bg-green-500' : 'bg-gray-500'" 
+                                     class="w-2 h-2 rounded-full mr-3"></div>
+                                <span class="text-white">{{ scout.name }}</span>
+                            </div>
+                            <div class="text-sm text-gray-400">
+                                {{ scout.opportunities }}个机会
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中间：图表和分析 -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- SHAP解释图 -->
+                <div v-if="selectedOpportunity" class="glass-card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold text-white mb-4">🧠 AI决策解释</h2>
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-gray-400">预测得分</span>
+                            <span class="text-2xl font-bold gradient-text">
+                                {{ (selectedOpportunity.ml_score * 100).toFixed(1) }}%
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- SHAP瀑布图 -->
+                    <div class="space-y-2">
+                        <div v-for="feature in shapValues" :key="feature.name" class="shap-bar">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm text-gray-400">{{ feature.label }}</span>
+                                <span :class="feature.value > 0 ? 'text-green-400' : 'text-red-400'" 
+                                      class="text-sm font-semibold">
+                                    {{ feature.value > 0 ? '+' : '' }}{{ feature.value.toFixed(3) }}
+                                </span>
+                            </div>
+                            <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div :style="{width: Math.abs(feature.value) * 100 + '%'}"
+                                     :class="feature.value > 0 ? 'bg-green-400' : 'bg-red-400'"
+                                     class="h-full transition-all duration-500"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 价格图表 -->
+                <div class="glass-card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold text-white mb-4">📈 市场分析</h2>
+                    <div class="chart-container">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 性能指标 -->
+                <div class="glass-card rounded-xl p-6">
+                    <h2 class="text-xl font-semibold text-white mb-4">📊 策略性能</h2>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div v-for="perf in performanceMetrics" :key="perf.name" class="text-center">
+                            <div class="text-2xl font-bold" :class="perf.positive ? 'text-green-400' : 'text-white'">
+                                {{ perf.value }}
+                            </div>
+                            <div class="text-xs text-gray-400 mt-1">{{ perf.label }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 通知区域 -->
+        <div class="fixed bottom-6 right-6 space-y-3">
+            <transition-group name="notification">
+                <div v-for="notification in notifications" :key="notification.id"
+                     class="glass-card rounded-lg p-4 min-w-[300px]"
+                     :class="getNotificationClass(notification.type)">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="font-semibold text-white">{{ notification.title }}</div>
+                            <div class="text-sm text-gray-300 mt-1">{{ notification.message }}</div>
+                        </div>
+                        <button @click="removeNotification(notification.id)" 
+                                class="text-gray-400 hover:text-white ml-4">✕</button>
+                    </div>
+                </div>
+            </transition-group>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    darkMode: true,
+                    ws: null,
+                    priceChart: null,
+                    
+                    // 主要指标
+                    mainMetrics: [
+                        { name: 'opportunities', label: '24h机会', value: '127', trend: 15.3, progress: 75 },
+                        { name: 'win_rate', label: '胜率', value: '68.5%', trend: 3.2, progress: 68.5 },
+                        { name: 'total_profit', label: '总利润', value: '$12,450', trend: 8.7, progress: 82 },
+                        { name: 'active_positions', label: '活跃仓位', value: '5', trend: -2.1, progress: 50 }
+                    ],
+                    
+                    // 实时机会
+                    opportunities: [],
+                    selectedOpportunity: null,
+                    
+                    // SHAP值
+                    shapValues: [],
+                    
+                    // Scout状态
+                    scoutStatus: [
+                        { name: 'Market Scout', active: true, opportunities: 45 },
+                        { name: 'DeFi Scout', active: true, opportunities: 23 },
+                        { name: 'Chain Scout', active: true, opportunities: 31 },
+                        { name: 'Sentiment Scout', active: true, opportunities: 28 }
+                    ],
+                    
+                    // 性能指标
+                    performanceMetrics: [
+                        { name: 'sharpe', label: 'Sharpe Ratio', value: '2.34', positive: true },
+                        { name: 'max_dd', label: '最大回撤', value: '-12.5%', positive: false },
+                        { name: 'trades', label: '总交易数', value: '342', positive: true },
+                        { name: 'profit_factor', label: '盈亏比', value: '1.85', positive: true },
+                        { name: 'win_trades', label: '盈利交易', value: '234', positive: true },
+                        { name: 'avg_return', label: '平均收益', value: '+3.2%', positive: true }
+                    ],
+                    
+                    // 通知
+                    notifications: []
+                }
+            },
+            
+            mounted() {
+                this.initWebSocket();
+                this.initCharts();
+                this.loadInitialData();
+            },
+            
+            methods: {
+                initWebSocket() {
+                    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = `${protocol}//${window.location.host}/ws`;
+                    
+                    this.ws = new WebSocket(wsUrl);
+                    
+                    this.ws.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+                        this.handleWebSocketMessage(data);
+                    };
+                    
+                    this.ws.onclose = () => {
+                        console.log('WebSocket closed. Reconnecting...');
+                        setTimeout(() => this.initWebSocket(), 3000);
+                    };
+                },
+                
+                handleWebSocketMessage(data) {
+                    if (data.type === 'opportunity') {
+                        this.addOpportunity(data.payload);
+                    } else if (data.type === 'metrics_update') {
+                        this.updateMetrics(data.payload);
+                    } else if (data.type === 'price_update') {
+                        this.updatePriceChart(data.payload);
+                    }
+                },
+                
+                initCharts() {
+                    const ctx = document.getElementById('priceChart').getContext('2d');
+                    
+                    this.priceChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: [],
+                            datasets: [{
+                                label: '价格',
+                                data: [],
+                                borderColor: 'rgb(0, 212, 255)',
+                                backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }, {
+                                label: 'MA20',
+                                data: [],
+                                borderColor: 'rgb(255, 206, 86)',
+                                borderDash: [5, 5],
+                                tension: 0.4,
+                                fill: false
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    labels: {
+                                        color: 'white'
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.1)'
+                                    },
+                                    ticks: {
+                                        color: 'white'
+                                    }
+                                },
+                                y: {
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.1)'
+                                    },
+                                    ticks: {
+                                        color: 'white'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+                
+                async loadInitialData() {
+                    try {
+                        // 加载最新机会
+                        const response = await fetch('/api/opportunities?limit=10');
+                        const data = await response.json();
+                        this.opportunities = data.opportunities;
+                        
+                        // 加载SHAP值（示例）
+                        this.shapValues = [
+                            { name: 'price_momentum', label: '价格动量', value: 0.234 },
+                            { name: 'volume_spike', label: '成交量激增', value: 0.187 },
+                            { name: 'sentiment_score', label: '市场情绪', value: 0.156 },
+                            { name: 'dev_activity', label: '开发活跃度', value: 0.098 },
+                            { name: 'whale_movement', label: '巨鲸活动', value: -0.045 },
+                            { name: 'gas_price', label: 'Gas费用', value: -0.023 }
+                        ];
+                    } catch (error) {
+                        console.error('Failed to load initial data:', error);
+                    }
+                },
+                
+                addOpportunity(opportunity) {
+                    this.opportunities.unshift(opportunity);
+                    if (this.opportunities.length > 50) {
+                        this.opportunities.pop();
+                    }
+                    
+                    // 添加通知
+                    if (opportunity.confidence > 0.8) {
+                        this.addNotification({
+                            type: 'success',
+                            title: '高置信度机会',
+                            message: `${opportunity.symbol} - ${opportunity.signal_type}`
+                        });
+                    }
+                },
+                
+                selectOpportunity(opp) {
+                    this.selectedOpportunity = opp;
+                    // 加载该机会的SHAP值
+                    this.loadShapValues(opp.id);
+                },
+                
+                async loadShapValues(opportunityId) {
+                    // 从API加载SHAP值
+                    try {
+                        const response = await fetch(`/api/opportunities/${opportunityId}/shap`);
+                        const data = await response.json();
+                        this.shapValues = data.shap_values;
+                    } catch (error) {
+                        console.error('Failed to load SHAP values:', error);
+                    }
+                },
+                
+                updatePriceChart(data) {
+                    if (this.priceChart) {
+                        this.priceChart.data.labels = data.labels;
+                        this.priceChart.data.datasets[0].data = data.prices;
+                        this.priceChart.data.datasets[1].data = data.ma20;
+                        this.priceChart.update('none');
+                    }
+                },
+                
+                updateMetrics(metrics) {
+                    // 更新主要指标
+                    Object.keys(metrics).forEach(key => {
+                        const metric = this.mainMetrics.find(m => m.name === key);
+                        if (metric) {
+                            metric.value = metrics[key].value;
+                            metric.trend = metrics[key].trend;
+                        }
+                    });
+                },
+                
+                getSignalTypeClass(type) {
+                    const classes = {
+                        'arbitrage': 'bg-purple-500/20 text-purple-400',
+                        'volume_spike': 'bg-blue-500/20 text-blue-400',
+                        'sentiment_shift': 'bg-green-500/20 text-green-400',
+                        'whale_movement': 'bg-yellow-500/20 text-yellow-400',
+                        'new_pool': 'bg-pink-500/20 text-pink-400'
+                    };
+                    return classes[type] || 'bg-gray-500/20 text-gray-400';
+                },
+                
+                getNotificationClass(type) {
+                    const classes = {
+                        'success': 'border-green-500/50',
+                        'warning': 'border-yellow-500/50',
+                        'error': 'border-red-500/50'
+                    };
+                    return classes[type] || '';
+                },
+                
+                addNotification(notification) {
+                    notification.id = Date.now();
+                    this.notifications.push(notification);
+                    
+                    // 自动移除通知
+                    setTimeout(() => {
+                        this.removeNotification(notification.id);
+                    }, 5000);
+                },
+                
+                removeNotification(id) {
+                    const index = this.notifications.findIndex(n => n.id === id);
+                    if (index !== -1) {
+                        this.notifications.splice(index, 1);
+                    }
+                },
+                
+                formatTime(timestamp) {
+                    const date = new Date(timestamp);
+                    return date.toLocaleTimeString('zh-CN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                },
+                
+                toggleDarkMode() {
+                    this.darkMode = !this.darkMode;
+                    // 实际实现中可以切换主题
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

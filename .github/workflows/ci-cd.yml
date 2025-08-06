@@ -1,0 +1,528 @@
+# .github/workflows/ci-cd.yml
+# 生产级CI/CD流水线 - 根据PDF建议实现自动化测试和部署
+
+name: Crypto Scout CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # 每天运行一次完整测试
+    - cron: '0 0 * * *'
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ============================================
+  # 1. 代码质量检查
+  # ============================================
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整历史用于分析
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      
+      - name: Run Black formatter check
+        run: |
+          black --check --diff src/ tests/
+      
+      - name: Run isort import sorter check
+        run: |
+          isort --check-only --diff src/ tests/
+      
+      - name: Run Flake8 linter
+        run: |
+          flake8 src/ tests/ --max-line-length=120 --extend-ignore=E203,W503
+      
+      - name: Run mypy type checker
+        run: |
+          mypy src/ --ignore-missing-imports --no-strict-optional
+      
+      - name: Run Bandit security linter
+        run: |
+          bandit -r src/ -ll -x tests/
+      
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+
+  # ============================================
+  # 2. 单元测试
+  # ============================================
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      rabbitmq:
+        image: rabbitmq:3.13-management
+        env:
+          RABBITMQ_DEFAULT_USER: test_user
+          RABBITMQ_DEFAULT_PASS: test_pass
+        options: >-
+          --health-cmd "rabbitmq-diagnostics ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5672:5672
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      
+      - name: Run unit tests with coverage
+        env:
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
+          RABBITMQ_URL: amqp://test_user:test_pass@localhost:5672/
+          REDIS_URL: redis://localhost:6379
+        run: |
+          pytest tests/unit/ \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term-missing \
+            -v
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # ============================================
+  # 3. 集成测试
+  # ============================================
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Start services with Docker Compose
+        run: |
+          docker-compose -f docker-compose.test.yml up -d
+          sleep 30  # 等待服务启动
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      
+      - name: Run integration tests
+        run: |
+          pytest tests/integration/ -v --tb=short
+      
+      - name: Stop services
+        if: always()
+        run: |
+          docker-compose -f docker-compose.test.yml down -v
+
+  # ============================================
+  # 4. 回测验证
+  # ============================================
+  backtest-validation:
+    name: Backtest Validation
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install backtesting
+      
+      - name: Download historical data
+        run: |
+          python scripts/download_historical_data.py --days 90
+      
+      - name: Run backtest
+        run: |
+          python src/backtesting/run_backtest.py \
+            --symbols BTC/USDT,ETH/USDT \
+            --start-date 2024-01-01 \
+            --end-date 2024-12-31 \
+            --output reports/backtest_results.json
+      
+      - name: Validate backtest results
+        run: |
+          python scripts/validate_backtest.py reports/backtest_results.json
+      
+      - name: Upload backtest report
+        uses: actions/upload-artifact@v3
+        with:
+          name: backtest-report
+          path: reports/
+
+  # ============================================
+  # 5. 构建Docker镜像
+  # ============================================
+  build-docker:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    if: github.event_name == 'push'
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    strategy:
+      matrix:
+        service: [scout, analyzer, ml-predictor, web, telegram]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.${{ matrix.service }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # ============================================
+  # 6. 安全扫描
+  # ============================================
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: build-docker
+    
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-scout:latest
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+      
+      - name: Run Snyk security scan
+        uses: snyk/actions/python@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+  # ============================================
+  # 7. 性能测试
+  # ============================================
+  performance-test:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: build-docker
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install Locust
+        run: pip install locust
+      
+      - name: Start application
+        run: |
+          docker-compose -f docker-compose.perf.yml up -d
+          sleep 60  # 等待应用启动
+      
+      - name: Run performance tests
+        run: |
+          locust -f tests/performance/locustfile.py \
+            --host http://localhost:8000 \
+            --users 100 \
+            --spawn-rate 10 \
+            --run-time 5m \
+            --headless \
+            --html reports/performance.html
+      
+      - name: Upload performance report
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-report
+          path: reports/performance.html
+      
+      - name: Stop application
+        if: always()
+        run: docker-compose -f docker-compose.perf.yml down -v
+
+  # ============================================
+  # 8. 部署到测试环境
+  # ============================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build-docker, security-scan]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to staging server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            cd /opt/crypto-scout
+            git pull origin develop
+            docker-compose -f docker-compose.staging.yml pull
+            docker-compose -f docker-compose.staging.yml up -d --remove-orphans
+            docker system prune -f
+
+  # ============================================
+  # 9. 部署到生产环境
+  # ============================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-docker, security-scan, performance-test]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Create deployment
+        uses: actions/github-script@v6
+        id: deployment
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.ref,
+              environment: 'production',
+              required_contexts: [],
+              auto_merge: false
+            });
+            return deployment.data.id;
+      
+      - name: Deploy to production servers
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PROD_HOSTS }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/crypto-scout
+            
+            # 备份当前版本
+            docker-compose -f docker-compose.prod.yml exec -T timescaledb \
+              pg_dump -U $DB_USER $DB_NAME > backup_$(date +%Y%m%d_%H%M%S).sql
+            
+            # 拉取最新代码和镜像
+            git pull origin main
+            docker-compose -f docker-compose.prod.yml pull
+            
+            # 滚动更新
+            docker-compose -f docker-compose.prod.yml up -d --no-deps --scale scout=2 scout
+            sleep 30
+            docker-compose -f docker-compose.prod.yml up -d --remove-orphans
+            
+            # 清理旧镜像
+            docker system prune -f
+      
+      - name: Update deployment status
+        uses: actions/github-script@v6
+        if: always()
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.result }},
+              state: '${{ job.status }}',
+              environment_url: 'https://crypto-scout.example.com',
+              description: 'Deployment ${{ job.status }}'
+            });
+      
+      - name: Send deployment notification
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            Deployment to production ${{ job.status }}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  # ============================================
+  # 10. 监控和告警设置
+  # ============================================
+  setup-monitoring:
+    name: Setup Monitoring
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Configure Prometheus alerts
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.MONITORING_HOST }}
+          username: ${{ secrets.MONITORING_USER }}
+          key: ${{ secrets.MONITORING_SSH_KEY }}
+          script: |
+            cd /opt/monitoring
+            # 更新Prometheus配置
+            ./update_prometheus_config.sh
+            docker-compose restart prometheus
+      
+      - name: Update Grafana dashboards
+        run: |
+          curl -X POST ${{ secrets.GRAFANA_URL }}/api/dashboards/db \
+            -H "Authorization: Bearer ${{ secrets.GRAFANA_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d @monitoring/dashboards/crypto-scout.json
+      
+      - name: Setup PagerDuty integration
+        if: success()
+        run: |
+          curl -X POST https://api.pagerduty.com/incidents \
+            -H "Authorization: Token token=${{ secrets.PAGERDUTY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "incident": {
+                "type": "incident",
+                "title": "Crypto Scout deployed to production",
+                "service": {
+                  "id": "${{ secrets.PAGERDUTY_SERVICE_ID }}",
+                  "type": "service_reference"
+                },
+                "body": {
+                  "type": "incident_body",
+                  "details": "Version ${{ github.sha }} deployed successfully"
+                }
+              }
+            }'
