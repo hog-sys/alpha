@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 核心依赖
 fastapi==0.116.1
 uvicorn[standard]==0.35.0
@@ -37,33 +36,3 @@ psutil==5.9.6
 # 开发工具
 click==8.2.2
 colorama==0.4.6
-=======
-# Web and Server
-fastapi
-uvicorn
-gunicorn
-
-# Data and Async
-aio-pika
-asyncpg
-sqlalchemy
-numpy
-pandas
-
-# Telegram Bot
-python-telegram-bot
-
-# Blockchain and Crypto
-web3
-ccxt
-
-# Machine Learning
-scikit-learn
-joblib
-
-# System
-psutil
-
-# Windows specific (optional, for local dev)
-pywin32; sys_platform == 'win32'
->>>>>>> e5cf058720e42a15be9be28747f9f02b5d15a885
