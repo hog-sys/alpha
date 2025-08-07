@@ -1,0 +1,29 @@
+# 代码质量与格式化工具
+black>=23.0.0
+isort>=5.12.0
+flake8>=6.0.0
+mypy>=1.7.0
+
+# 安全扫描工具
+bandit
+safety
+trufflehog
+
+# 测试框架与工具
+pytest
+pytest-asyncio
+pytest-cov
+httpx-mock
+faker
+codecov
+
+# 回测框架
+backtesting
+
+# 性能测试
+locust
+
+# 其他开发工具
+pre-commit
+commitizen
+python-semantic-release
