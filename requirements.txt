@@ -1,44 +1,44 @@
 # 核心依赖
-fastapi==0.116.1
-uvicorn[standard]==0.35.0
-python-dotenv==1.1.1
-pydantic==2.11.7
+fastapi
+uvicorn[standard]
+python-dotenv
+pydantic
 
 # 数据库和缓存
-redis==6.2.0
-aioredis==2.0.1
-SQLAlchemy==2.0.35
-psycopg2-binary==2.9.12
+redis
+aioredis
+SQLAlchemy
+psycopg2-binary
 
 # HTTP客户端
-aiohttp==3.10.11
-httpx==0.25.2
+aiohttp
+httpx
 
 # 机器学习
-pandas==2.3.1
-numpy==2.3.2
-scikit-learn==1.7.1
-joblib==1.5.1
-statsmodels==0.15.1
-xgboost>=1.7.0
-tensorflow>=2.13.0
-ta-lib>=0.4.25
-shap>=0.42.0
-backtesting>=0.3.3
+pandas
+numpy
+scikit-learn
+joblib
+statsmodels
+xgboost
+tensorflow
+ta-lib
+shap
+backtesting
 
 # 消息和通知
-pika==1.3.2
-python-telegram-bot==20.7
-websockets==15.0.1
+pika
+python-telegram-bot
+websockets
 
 # 可视化和分析
-matplotlib==3.10.5
-seaborn==0.13.2
-plotly==5.17.0
+matplotlib
+seaborn
+plotly
 
 # 系统监控
-psutil==5.9.6
+psutil
 
 # 开发工具
-click==8.2.2
-colorama==0.4.6
+click
+colorama
