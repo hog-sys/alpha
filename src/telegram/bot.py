@@ -24,7 +24,14 @@ import redis.asyncio as redis
 from sqlalchemy import select, desc, and_, or_
 from sqlalchemy.sql import func
 
-from src.core.database import engine, opportunities_table
+from src.core.db import init_db, db
+from src.analysis.ml_predictor import EnhancedMLPredictor
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')  # 非交互式后端
+import io
+import base64
+import shap
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +71,8 @@ class SecureTelegramBot:
         # 命令白名单
         self.allowed_commands = {
             'start', 'help', 'status', 'alerts', 'subscribe', 
-            'unsubscribe', 'settings', 'stats', 'about', 'stop'
+            'unsubscribe', 'settings', 'stats', 'about', 'stop',
+            'explain'  # 新增SHAP解释命令
         }
         
         # 用户偏好设置（带验证）
@@ -72,8 +80,12 @@ class SecureTelegramBot:
             'min_confidence': 0.7,
             'max_alerts_per_hour': 10,
             'signal_types': ['arbitrage', 'volume_spike'],
-            'language': 'zh'
+            'language': 'zh',
+            'enable_shap_charts': True  # 是否启用SHAP图表
         }
+        
+        # ML 预测器实例
+        self.ml_predictor = None
         
         self.app = None
         self.running = False
@@ -111,6 +123,15 @@ class SecureTelegramBot:
         logger.info("初始化安全Telegram机器人...")
         
         try:
+            # 初始化数据库
+            await init_db()
+            
+            # 初始化ML预测器
+            from config.settings import get_config
+            config = get_config()
+            self.ml_predictor = EnhancedMLPredictor(config)
+            await self.ml_predictor.initialize()
+            
             # 初始化Redis
             await self._init_redis()
             
@@ -370,17 +391,16 @@ class SecureTelegramBot:
         """处理 /status 命令"""
         try:
             # 获取系统状态
-            async with engine.connect() as conn:
-                # 使用参数化查询
-                result = await conn.execute(
-                    select(
-                        func.count(opportunities_table.c.id).label('total'),
-                        func.count(
-                            opportunities_table.c.id
-                        ).filter(
-                            opportunities_table.c.timestamp > datetime.now() - timedelta(hours=1)
-                        ).label('last_hour')
-                    )
+            async with db.async_session() as session:
+                # 使用新的TimescaleDB查询
+                from sqlalchemy import text
+                result = await session.execute(
+                    text("""
+                    SELECT 
+                        COUNT(*) as total,
+                        COUNT(*) FILTER (WHERE timestamp > NOW() - INTERVAL '1 hour') as last_hour
+                    FROM alpha_opportunities
+                    """)
                 )
                 row = result.fetchone()
                 
@@ -409,15 +429,17 @@ class SecureTelegramBot:
         """处理 /alerts 命令 - 需要授权"""
         try:
             # 获取最新机会
-            query = select(opportunities_table).where(
-                opportunities_table.c.confidence >= 0.7
-            ).order_by(
-                desc(opportunities_table.c.timestamp)
-            ).limit(5)
-            
-            async with engine.connect() as conn:
-                results = await conn.execute(query)
-                opportunities = [dict(row) for row in results.mappings()]
+            async with db.async_session() as session:
+                from sqlalchemy import text
+                result = await session.execute(
+                    text("""
+                    SELECT * FROM alpha_opportunities 
+                    WHERE confidence >= 0.7 
+                    ORDER BY timestamp DESC 
+                    LIMIT 5
+                    """)
+                )
+                opportunities = [dict(row._mapping) for row in result]
             
             if not opportunities:
                 await update.message.reply_text("📭 暂无新机会")
@@ -679,6 +701,183 @@ class SecureTelegramBot:
         
         return validated
     
+    async def cmd_explain(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """处理 /explain 命令 - 生成SHAP解释图表"""
+        try:
+            # 获取最新的一个高置信度机会
+            async with db.async_session() as session:
+                from sqlalchemy import text
+                result = await session.execute(
+                    text("""
+                    SELECT * FROM alpha_opportunities 
+                    WHERE confidence >= 0.8 
+                    ORDER BY timestamp DESC 
+                    LIMIT 1
+                    """)
+                )
+                opportunity = result.fetchone()
+            
+            if not opportunity:
+                await update.message.reply_text("📭 暂无高置信度机会可供解释")
+                return
+            
+            # 转换为字典格式
+            opp_dict = dict(opportunity._mapping)
+            
+            # 获取ML解释
+            if self.ml_predictor:
+                explanation = await self.ml_predictor.predict_opportunity_with_explanation(opp_dict)
+                
+                # 生成SHAP瀑布图
+                chart_buffer = await self._generate_shap_chart(explanation)
+                
+                if chart_buffer:
+                    # 发送图表
+                    await update.message.reply_photo(
+                        photo=chart_buffer,
+                        caption=f"🔍 **SHAP可解释性分析**\n\n"
+                               f"**交易对:** {opp_dict.get('symbol', 'N/A')}\n"
+                               f"**ML预测分数:** {explanation['prediction_score']:.3f}\n"
+                               f"**模型置信度:** {explanation['model_confidence']:.3f}\n\n"
+                               f"**解释:** {explanation['explanation']}"
+                    )
+                else:
+                    # 如果图表生成失败，发送文字解释
+                    await self._send_text_explanation(update, explanation, opp_dict)
+            else:
+                await update.message.reply_text("❌ ML预测器未初始化")
+                
+        except Exception as e:
+            logger.error(f"生成SHAP解释失败: {e}", exc_info=True)
+            await update.message.reply_text("❌ 生成解释图表失败")
+    
+    async def _generate_shap_chart(self, explanation: Dict[str, Any]) -> Optional[io.BytesIO]:
+        """生成SHAP瀑布图"""
+        try:
+            shap_values = explanation.get('shap_values', {})
+            if not shap_values:
+                return None
+            
+            # 获取前10个最重要的特征
+            sorted_features = sorted(
+                shap_values.items(), 
+                key=lambda x: abs(x[1]), 
+                reverse=True
+            )[:10]
+            
+            if not sorted_features:
+                return None
+            
+            # 创建图表
+            fig, ax = plt.subplots(figsize=(10, 6))
+            
+            features = [item[0] for item in sorted_features]
+            values = [item[1] for item in sorted_features]
+            colors = ['red' if v < 0 else 'green' for v in values]
+            
+            # 创建水平条形图
+            bars = ax.barh(range(len(features)), values, color=colors, alpha=0.7)
+            
+            # 设置标签
+            ax.set_yticks(range(len(features)))
+            ax.set_yticklabels([self._translate_feature_name(f) for f in features])
+            ax.set_xlabel('SHAP值 (对预测的贡献)')
+            ax.set_title('SHAP特征重要性分析', fontsize=14, fontweight='bold')
+            
+            # 添加数值标签
+            for i, (bar, value) in enumerate(zip(bars, values)):
+                ax.text(
+                    value + (0.001 if value >= 0 else -0.001),
+                    i,
+                    f'{value:.3f}',
+                    va='center',
+                    ha='left' if value >= 0 else 'right',
+                    fontsize=9
+                )
+            
+            # 添加零线
+            ax.axvline(x=0, color='black', linestyle='-', alpha=0.3)
+            
+            # 设置中文字体
+            plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS']
+            plt.rcParams['axes.unicode_minus'] = False
+            
+            # 调整布局
+            plt.tight_layout()
+            
+            # 保存到内存
+            buffer = io.BytesIO()
+            plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight')
+            buffer.seek(0)
+            plt.close(fig)
+            
+            return buffer
+            
+        except Exception as e:
+            logger.error(f"生成SHAP图表失败: {e}")
+            return None
+    
+    def _translate_feature_name(self, feature: str) -> str:
+        """将技术特征名转换为易懂的中文描述"""
+        translations = {
+            'price': '价格走势',
+            'volume': '成交量',
+            'sentiment_score': '市场情绪',
+            'dev_activity_score': '开发活跃度',
+            'whale_movement_count': '巨鲸活动',
+            'rsi': 'RSI指标',
+            'macd': 'MACD指标',
+            'spread': '买卖价差',
+            'gas_price': 'Gas费用',
+            'mention_count': '社交提及量',
+            'bid': '买价',
+            'ask': '卖价',
+            'bollinger_upper': '布林带上轨',
+            'bollinger_lower': '布林带下轨',
+            'exchange_inflow': '交易所流入',
+            'exchange_outflow': '交易所流出',
+            'market_cap_rank': '市值排名',
+            'volume_rank': '成交量排名'
+        }
+        
+        for key, value in translations.items():
+            if key in feature.lower():
+                return value
+        
+        return feature
+    
+    async def _send_text_explanation(self, update: Update, explanation: Dict[str, Any], opportunity: Dict[str, Any]):
+        """发送文字版解释"""
+        feature_importance = explanation.get('feature_importance', {})
+        
+        if not feature_importance:
+            await update.message.reply_text("❌ 无法获取特征重要性数据")
+            return
+        
+        # 构建文字解释
+        text = f"🔍 **SHAP可解释性分析**\n\n"
+        text += f"**交易对:** {opportunity.get('symbol', 'N/A')}\n"
+        text += f"**ML预测分数:** {explanation['prediction_score']:.3f}\n"
+        text += f"**模型置信度:** {explanation['model_confidence']:.3f}\n\n"
+        
+        text += "**前5个重要特征:**\n"
+        sorted_features = sorted(
+            feature_importance.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )[:5]
+        
+        for i, (feature, importance) in enumerate(sorted_features, 1):
+            feature_name = self._translate_feature_name(feature)
+            text += f"{i}. {feature_name}: {importance:.3f}\n"
+        
+        text += f"\n**解释:** {explanation['explanation']}"
+        
+        await update.message.reply_text(
+            text=self._sanitize_message(text),
+            parse_mode=ParseMode.MARKDOWN_V2
+        )
+    
     async def _handle_setting(self, update: Update, context: ContextTypes.DEFAULT_TYPE, setting: str):
         """处理设置更改"""
         # 实现具体的设置处理逻辑
@@ -733,6 +932,7 @@ class SecureTelegramBot:
             BotCommand("help", "获取帮助信息"),
             BotCommand("status", "查看系统状态"),
             BotCommand("alerts", "查看最新机会"),
+            BotCommand("explain", "SHAP可解释性分析"),
             BotCommand("subscribe", "订阅通知"),
             BotCommand("unsubscribe", "取消订阅"),
             BotCommand("settings", "个人设置"),
@@ -742,7 +942,7 @@ class SecureTelegramBot:
         await self.app.bot.set_my_commands(commands)
     
     async def send_opportunity(self, opportunity: Dict[str, Any], user_ids: List[int] = None):
-        """发送机会通知给用户"""
+        """发送机会通知给用户（增强版，包含SHAP图表）"""
         if not self.running or not self.app:
             return
         
@@ -756,6 +956,18 @@ class SecureTelegramBot:
                 user_ids = [int(u) for u in subscribers if u.isdigit()]
             else:
                 user_ids = list(self.authorized_users)
+        
+        # 为高置信度机会生成SHAP图表
+        chart_buffer = None
+        if (opportunity.get('confidence', 0) >= 0.8 and 
+            self.ml_predictor and 
+            opportunity.get('prediction_details')):
+            
+            try:
+                explanation = await self.ml_predictor.predict_opportunity_with_explanation(opportunity)
+                chart_buffer = await self._generate_shap_chart(explanation)
+            except Exception as e:
+                logger.warning(f"生成SHAP图表失败: {e}")
         
         # 发送消息
         for user_id in user_ids:
@@ -771,12 +983,25 @@ class SecureTelegramBot:
                 if opportunity.get('signal_type') not in settings['signal_types']:
                     continue
                 
-                # 发送消息
-                await self.app.bot.send_message(
-                    chat_id=user_id,
-                    text=self._sanitize_message(message),
-                    parse_mode=ParseMode.MARKDOWN_V2
-                )
+                # 如果用户启用了SHAP图表且有图表数据，发送图片
+                if (settings.get('enable_shap_charts', True) and 
+                    chart_buffer and 
+                    opportunity.get('confidence', 0) >= 0.8):
+                    
+                    chart_buffer.seek(0)  # 重置buffer位置
+                    await self.app.bot.send_photo(
+                        chat_id=user_id,
+                        photo=chart_buffer,
+                        caption=self._sanitize_message(message),
+                        parse_mode=ParseMode.MARKDOWN_V2
+                    )
+                else:
+                    # 发送普通文字消息
+                    await self.app.bot.send_message(
+                        chat_id=user_id,
+                        text=self._sanitize_message(message),
+                        parse_mode=ParseMode.MARKDOWN_V2
+                    )
                 
                 # 记录发送
                 self.audit_logger.info(f"发送机会通知给用户 {user_id}")

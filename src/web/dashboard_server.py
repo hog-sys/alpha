@@ -23,7 +23,11 @@ from pydantic import BaseModel, validator
 import html
 from sqlalchemy import select, desc, text, and_
 from sqlalchemy.sql import func
-from src.core.database import engine, opportunities_table
+from src.core.db import init_db, db
+from src.analysis.ml_predictor import EnhancedMLPredictor
+import plotly.graph_objs as go
+import plotly.utils
+import plotly.express as px
 import redis.asyncio as redis
 from contextlib import asynccontextmanager
 import ipaddress
@@ -233,6 +237,7 @@ class SecureDashboardServer:
             redoc_url=None
         )
         self.active_connections: Dict[str, WebSocket] = {}
+        self.ml_predictor = None
         self._setup_middleware()
         self._register_routes()
         
@@ -353,6 +358,136 @@ class SecureDashboardServer:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="内部服务器错误"
+                )
+        
+        @self.app.get("/api/shap-analysis/{opportunity_id}")
+        async def get_shap_analysis(
+            opportunity_id: int, 
+            current_user: TokenData = Depends(auth_manager.get_current_user)
+        ):
+            """获取SHAP可解释性分析"""
+            try:
+                # 从数据库获取机会数据
+                async with db.async_session() as session:
+                    result = await session.execute(
+                        text("SELECT * FROM alpha_opportunities WHERE id = :id"),
+                        {"id": opportunity_id}
+                    )
+                    opportunity = result.fetchone()
+                
+                if not opportunity:
+                    raise HTTPException(status_code=404, detail="机会未找到")
+                
+                # 转换为字典
+                opp_dict = dict(opportunity._mapping)
+                
+                # 获取ML解释
+                if self.ml_predictor:
+                    explanation = await self.ml_predictor.predict_opportunity_with_explanation(opp_dict)
+                    
+                    # 生成Plotly图表数据
+                    chart_data = self._generate_shap_plotly_chart(explanation)
+                    
+                    return JSONResponse(content={
+                        "opportunity": {
+                            "id": opp_dict["id"],
+                            "symbol": opp_dict["symbol"],
+                            "signal_type": opp_dict["signal_type"],
+                            "confidence": float(opp_dict["confidence"]),
+                            "timestamp": opp_dict["timestamp"].isoformat()
+                        },
+                        "explanation": explanation,
+                        "chart": chart_data
+                    })
+                else:
+                    raise HTTPException(status_code=503, detail="ML预测器不可用")
+                    
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.error(f"获取SHAP分析失败: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="获取分析失败"
+                )
+        
+        @self.app.get("/api/market-insights")
+        async def get_market_insights(current_user: TokenData = Depends(auth_manager.get_current_user)):
+            """获取市场洞察和可解释性指标"""
+            try:
+                # 获取最近的高置信度机会
+                async with db.async_session() as session:
+                    result = await session.execute(
+                        text("""
+                        SELECT * FROM alpha_opportunities 
+                        WHERE confidence >= 0.7 
+                        ORDER BY timestamp DESC 
+                        LIMIT 20
+                        """)
+                    )
+                    opportunities = [dict(row._mapping) for row in result]
+                
+                # 统计分析
+                insights = {
+                    "total_opportunities": len(opportunities),
+                    "avg_confidence": sum(o["confidence"] for o in opportunities) / len(opportunities) if opportunities else 0,
+                    "signal_type_distribution": {},
+                    "hourly_distribution": {},
+                    "top_symbols": {},
+                    "feature_importance_trends": []
+                }
+                
+                # 信号类型分布
+                for opp in opportunities:
+                    signal_type = opp["signal_type"]
+                    insights["signal_type_distribution"][signal_type] = insights["signal_type_distribution"].get(signal_type, 0) + 1
+                
+                # 按小时分布
+                for opp in opportunities:
+                    hour = opp["timestamp"].hour
+                    insights["hourly_distribution"][str(hour)] = insights["hourly_distribution"].get(str(hour), 0) + 1
+                
+                # 热门交易对
+                for opp in opportunities:
+                    symbol = opp["symbol"]
+                    insights["top_symbols"][symbol] = insights["top_symbols"].get(symbol, 0) + 1
+                
+                # 如果有ML预测器，添加特征重要性趋势
+                if self.ml_predictor and opportunities:
+                    try:
+                        # 分析最近几个机会的特征重要性
+                        feature_trends = {}
+                        for opp in opportunities[:5]:  # 只分析前5个
+                            explanation = await self.ml_predictor.predict_opportunity_with_explanation(opp)
+                            for feature, importance in explanation.get("feature_importance", {}).items():
+                                if feature not in feature_trends:
+                                    feature_trends[feature] = []
+                                feature_trends[feature].append(importance)
+                        
+                        # 计算平均重要性
+                        for feature, values in feature_trends.items():
+                            insights["feature_importance_trends"].append({
+                                "feature": feature,
+                                "avg_importance": sum(values) / len(values),
+                                "trend_data": values
+                            })
+                        
+                        # 按重要性排序
+                        insights["feature_importance_trends"].sort(
+                            key=lambda x: x["avg_importance"], 
+                            reverse=True
+                        )
+                        
+                    except Exception as e:
+                        logger.warning(f"分析特征重要性趋势失败: {e}")
+                
+                return JSONResponse(content=insights)
+                
+            except Exception as e:
+                logger.error(f"获取市场洞察失败: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="获取洞察失败"
                 )
         
         @self.app.post("/api/opportunities")
@@ -493,6 +628,54 @@ class SecureDashboardServer:
                 "total_opportunities": 0,
                 "opportunities_last_hour": 0
             }
+    
+    def _generate_shap_plotly_chart(self, explanation: Dict[str, Any]) -> Dict[str, Any]:
+        """生成Plotly SHAP图表数据"""
+        try:
+            shap_values = explanation.get('shap_values', {})
+            if not shap_values:
+                return {}
+            
+            # 获取前10个最重要的特征
+            sorted_features = sorted(
+                shap_values.items(), 
+                key=lambda x: abs(x[1]), 
+                reverse=True
+            )[:10]
+            
+            if not sorted_features:
+                return {}
+            
+            features = [item[0] for item in sorted_features]
+            values = [item[1] for item in sorted_features]
+            colors = ['red' if v < 0 else 'green' for v in values]
+            
+            # 创建Plotly条形图
+            fig = go.Figure(data=[
+                go.Bar(
+                    y=features,
+                    x=values,
+                    orientation='h',
+                    marker_color=colors,
+                    text=[f'{v:.3f}' for v in values],
+                    textposition='auto',
+                )
+            ])
+            
+            fig.update_layout(
+                title='SHAP特征重要性分析',
+                xaxis_title='SHAP值 (对预测的贡献)',
+                yaxis_title='特征',
+                height=400,
+                margin=dict(l=150, r=50, t=50, b=50)
+            )
+            
+            # 转换为JSON
+            return json.loads(plotly.utils.PlotlyJSONEncoder().encode(fig))
+            
+        except Exception as e:
+            logger.error(f"生成Plotly图表失败: {e}")
+            return {}
     
     async def start(self):
         """启动Web服务器"""

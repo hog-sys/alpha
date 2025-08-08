@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import joblib
 from pathlib import Path
 import logging
+from src.core.db import init_db
 
 # 机器学习库
 from sklearn.preprocessing import StandardScaler
@@ -67,6 +68,8 @@ class EnhancedMLPredictor:
         """初始化预测器"""
         logger.info("初始化增强版ML预测器...")
         
+        # 初始化数据库连接
+        await init_db()
         # 加载已有模型
         await self._load_models()
         

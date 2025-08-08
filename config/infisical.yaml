@@ -1,0 +1,66 @@
+# config/infisical.yaml
+# Infisical 自托管实例配置文件
+
+# 基础配置
+server:
+  host: "0.0.0.0"
+  port: 8080
+  
+# 数据库配置 (使用MongoDB)
+database:
+  type: "mongodb"
+  connection_string: "mongodb://infisical-mongo:27017/infisical"
+  
+# Redis配置 (用于缓存和会话)
+redis:
+  url: "redis://redis:6379"
+  
+# JWT配置
+jwt:
+  # 这些密钥应该通过环境变量注入
+  secret: "${JWT_SECRET}"
+  lifetime: "1d"
+  
+# 加密配置
+encryption:
+  # 主加密密钥，应通过环境变量注入
+  key: "${ENCRYPTION_KEY}"
+  
+# SMTP配置 (可选，用于邮件通知)
+smtp:
+  enabled: false
+  host: ""
+  port: 587
+  username: ""
+  password: ""
+  from_address: "noreply@cryptoalphascout.com"
+  
+# 安全配置
+security:
+  # 是否启用HTTPS
+  https_enabled: false
+  # 允许的域名
+  allowed_origins:
+    - "http://localhost:3000"
+    - "http://localhost:8080"
+    - "https://dashboard.cryptoalphascout.com"
+  
+# 日志配置
+logging:
+  level: "info"
+  format: "json"
+  
+# 限制配置
+limits:
+  max_projects_per_user: 10
+  max_secrets_per_project: 1000
+  max_api_requests_per_minute: 100
+  
+# 备份配置
+backup:
+  enabled: true
+  interval: "24h"
+  retention: "30d"
+  storage:
+    type: "local"
+    path: "/app/backups"

@@ -2,14 +2,14 @@
 import asyncio
 import json
 import logging
+import os
 from typing import Dict, Any
 
 import aio_pika
 from aio_pika.abc import AbstractIncomingMessage
 from sqlalchemy import insert
 
-from config.settings import settings
-from src.core.database import engine, opportunities_table
+from src.core.database import TimescaleDBManager
 
 logger = logging.getLogger(__name__)
 
@@ -18,19 +18,23 @@ class PersistenceService:
     负责从RabbitMQ消费机会数据，并将其持久化到TimescaleDB。
     """
     def __init__(self):
-        self.amqp_url = settings.RABBITMQ_URL
-        self.db_engine = engine
+        self.amqp_url = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
+        database_url = os.getenv("DATABASE_URL", "postgresql+asyncpg://crypto_user:SecureDBPass123!@localhost:5432/crypto_scout")
+        self.db_manager = TimescaleDBManager(database_url)
+        self.db_engine = None  # 将在初始化后赋值
         self.connection = None
         self.channel = None
-        self.queue_name = "opportunities_raw"
+        self.queue_name = "alpha_signals"
 
     async def run(self):
         """启动服务并持续运行"""
         logger.info("🚀 持久化服务启动中...")
-        if not self.db_engine:
-            logger.critical("❌ 数据库引擎未初始化，持久化服务无法启动。")
-            return
-            
+        
+        # 初始化数据库（创建表和超表）
+        await self.db_manager.initialize()
+        self.db_engine = self.db_manager.engine
+        self.opportunities_table = self.db_manager.alpha_opportunities_table
+
         while True:
             try:
                 self.connection = await aio_pika.connect_robust(self.amqp_url)
@@ -70,7 +74,7 @@ class PersistenceService:
                     return # 消息格式不对，直接确认并丢弃
 
                 # 准备插入数据库
-                stmt = insert(opportunities_table).values(
+                stmt = insert(self.opportunities_table).values(
                     id=data['id'],
                     scout_name=data['scout_name'],
                     signal_type=data['signal_type'],

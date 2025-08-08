@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # security_patches.py
 """
 综合安全补丁 - 修复项目中所有关键安全漏洞

@@ -114,7 +114,9 @@ services:
   # 4. Infisical 密钥管理服务（自托管）
   # ============================================
   infisical:
-    image: infisical/infisical:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.infisical
     container_name: crypto-scout-infisical
     hostname: infisical
     restart: unless-stopped
@@ -122,22 +124,39 @@ services:
       - "8090:8080"
     volumes:
       - infisical_data:/app/data
+      - infisical_backups:/app/backups
+      - infisical_logs:/app/logs
     environment:
-      ENCRYPTION_KEY: ${INFISICAL_ENCRYPTION_KEY}
-      JWT_SECRET: ${INFISICAL_JWT_SECRET}
-      MONGODB_URL: mongodb://infisical-mongo:27017/infisical
-      REDIS_URL: redis://redis:6379
       NODE_ENV: production
+      DB_CONNECTION_URI: mongodb://infisical-mongo:27017/infisical
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${INFISICAL_JWT_SECRET:-$(openssl rand -hex 32)}
+      ENCRYPTION_KEY: ${INFISICAL_ENCRYPTION_KEY:-$(openssl rand -hex 32)}
+      SITE_URL: ${INFISICAL_SITE_URL:-http://localhost:8090}
+      INFISICAL_ADMIN_EMAIL: ${INFISICAL_ADMIN_EMAIL:-admin@cryptoalphascout.com}
+      INFISICAL_ADMIN_PASSWORD: ${INFISICAL_ADMIN_PASSWORD:-SecureAdmin123!}
+      # 安全配置
+      HTTPS_ENABLED: ${INFISICAL_HTTPS_ENABLED:-false}
+      RATE_LIMIT_ENABLED: true
+      MAX_API_REQUESTS_PER_MINUTE: 100
     depends_on:
-      - infisical-mongo
-      - redis
+      infisical-mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - crypto-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/status"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   infisical-mongo:
     image: mongo:6
@@ -146,11 +165,24 @@ services:
     restart: unless-stopped
     volumes:
       - infisical_mongo_data:/data/db
+      - ./config/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-infisical}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-SecureMongoPass123!}
+      MONGO_INITDB_DATABASE: infisical
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-SecureMongo123!}
     networks:
       - crypto-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ============================================
   # 5. Scout服务（微服务架构）
@@ -237,6 +269,31 @@ services:
       DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
       WEB3_PROVIDER_ETH: ${WEB3_PROVIDER_ETH}
       WEB3_PROVIDER_BSC: ${WEB3_PROVIDER_BSC}
+      LOG_LEVEL: INFO
+    networks:
+      - crypto-network
+
+  # 合约安全Scout
+  contract-scout:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scout
+    args:
+      SCOUT_TYPE: contract
+    container_name: crypto-scout-contract
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+    environment:
+      SCOUT_TYPE: contract
+      SCAN_INTERVAL: 300
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
+      ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY}
+      GOPLUS_API_KEY: ${GOPLUS_API_KEY}
       LOG_LEVEL: INFO
     networks:
       - crypto-network
@@ -390,7 +447,35 @@ services:
       - crypto-network
 
   # ============================================
-  # 8. 监控和日志服务
+  # 8. 回测服务
+  # ============================================
+  backtest-runner:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backtest
+    container_name: crypto-scout-backtest
+    environment:
+      - DATABASE_URL=postgresql://crypto_user:crypto_pass@timescaledb:5432/crypto_scout
+      - RABBITMQ_URL=amqp://crypto_user:crypto_pass@rabbitmq:5672/
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./ml_models:/app/ml_models
+      - ./logs:/app/logs
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - crypto-network
+    restart: unless-stopped
+    profiles:
+      - backtest
+
+  # ============================================
+  # 9. 监控和日志服务
   # ============================================
   
   # Prometheus 监控
@@ -483,6 +568,10 @@ volumes:
   redis_data:
     driver: local
   infisical_data:
+    driver: local
+  infisical_backups:
+    driver: local
+  infisical_logs:
     driver: local
   infisical_mongo_data:
     driver: local

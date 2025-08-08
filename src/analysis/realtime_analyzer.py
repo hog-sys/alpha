@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from collections import deque
 import logging
+from src.core.db import init_db
 import json
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,8 @@ class RealtimeAnalyzer:
     async def initialize(self):
         """初始化分析器"""
         logger.info("初始化实时分析器...")
+        # 初始化数据库连接（TimescaleDB）
+        await init_db()
         
         # 启动定期分析任务
         asyncio.create_task(self._periodic_analysis())

@@ -11,7 +11,7 @@ import uuid
 import json
 
 # 修复：使用绝对路径导入，解决模块查找问题
-from src.core.messaging import Publisher
+from src.core.messaging import MessageBus, MessagePriority
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -48,13 +48,16 @@ class BaseScout(ABC):
         self.name = self.__class__.__name__.replace('Scout', '').lower()
         self.session: Optional[aiohttp.ClientSession] = None
         self.running = False
-        self.publisher = Publisher(settings.RABBITMQ_URL)
+        import os
+        amqp_url = os.getenv('RABBITMQ_URL', 'amqp://guest:guest@localhost:5672/')
+        self.message_bus = MessageBus(amqp_url)
 
     async def initialize(self):
         """初始化Scout"""
         timeout = aiohttp.ClientTimeout(total=30)
         connector = aiohttp.TCPConnector(limit=100, ttl_dns_cache=300)
         self.session = aiohttp.ClientSession(timeout=timeout, connector=connector)
+        await self.message_bus.setup_infrastructure()
         await self._initialize()
         self.running = True
         logger.info(f"✅ {self.name} Scout 初始化完成")
@@ -73,10 +76,9 @@ class BaseScout(ABC):
         """将一批机会发布到消息队列"""
         if not opportunities:
             return
-        queue_name = "opportunities_raw"
-        tasks = [self.publisher.publish(queue_name, opp.to_dict()) for opp in opportunities]
+        tasks = [self.message_bus.publish_opportunity(opp.to_dict(), MessagePriority.NORMAL) for opp in opportunities]
         await asyncio.gather(*tasks, return_exceptions=True)
-        logger.debug(f"发布了 {len(opportunities)} 个机会到队列 '{queue_name}'")
+        logger.debug(f"发布了 {len(opportunities)} 个机会到交换机 'alpha_signals'")
 
     def create_opportunity(
         self,
@@ -103,6 +105,6 @@ class BaseScout(ABC):
         self.running = False
         if self.session:
             await self.session.close()
-        if self.publisher:
-            await self.publisher.close()
+        if self.message_bus:
+            await self.message_bus.close()
         logger.info(f"✅ {self.name} Scout 已清理")

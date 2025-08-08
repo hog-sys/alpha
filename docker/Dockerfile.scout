@@ -1,0 +1,26 @@
+# docker/Dockerfile.scout
+# 通用 Scout 容器镜像，可通过环境变量 SCOUT_TYPE 选择具体运行器
+
+FROM python:3.11-slim AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+# 安装系统依赖（如需编译 psycopg2 / asyncpg 等）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential gcc libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# 默认启动 Market Scout，Compose 中可覆盖 SCOUT_TYPE
+ENV SCOUT_TYPE=market
+
+ENTRYPOINT ["sh", "-c", "python -m src.scouts.${SCOUT_TYPE}_runner"]
+
