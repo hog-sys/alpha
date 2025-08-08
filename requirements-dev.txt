@@ -13,7 +13,7 @@ trufflehog
 pytest
 pytest-asyncio
 pytest-cov
-httpx-mock
+pytest-httpx
 faker
 codecov
 
